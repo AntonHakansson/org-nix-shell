@@ -48,7 +48,7 @@ With ~emacsWithPackagesFromUsePackage~ you can do:
         src = pkgs.fetchFromGitHub {
           owner = "AntonHakansson";
           repo = pname;
-          rev = "be5c383617e007bcf52985c70add3760ab236eb4";
+          rev = "v${version}";
           sha256 = "sha256-iBJSdnsJtZyeVKQREOU2PkjxaKkmBeftMTaRDQMGo7U=";
         };
       })];
