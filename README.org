@@ -28,10 +28,10 @@ Load the nix-shell environment with ~org-nix-shell-load-direnv~.
 
 #+begin_src elisp
   (use-package org-nix-shell
-    :straight '(org-nix-shell :type git
+    :straight '(org-nix-shell
+                :type git
                 :host github
-                :repo "AntonHakansson/org-nix-shell")
-    :hook (org-mode . org-nix-shell-load-direnv))
+                :repo "AntonHakansson/org-nix-shell"))
 #+end_src
 
 * Customization
