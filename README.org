@@ -21,7 +21,7 @@ The package [[https://github.com/purcell/envrc][envrc]] does all the heavy lifti
   ,#+end_src
 
   ,#+begin_src sh
-    hello   # Use 'hello' dependency
+    hello   # use 'hello' dependency
   ,#+end_src
 #+end_src
 

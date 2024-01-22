@@ -1,20 +1,19 @@
-First, load nix-shell environment by running [[elisp:(org-nix-shell-load-direnv)]].
+Load nix shell environment with [[elisp:(org-nix-shell-load-direnv)]] and then evaluate the src blocks.
 
 #+name: nix-shell
-#+begin_src nix
+#+begin_src nix :noweb yes
   { pkgs ? import <nixpkgs> {}, pythonPackages ? pkgs.python3Packages }:
   pkgs.mkShell {
     buildInputs = [
-      pythonPackages.sympy
       pkgs.hello
-      pkgs.pkg-config
-      pkgs.cairo
+      pythonPackages.sympy
+      <<nix-c-dependencies>>
     ];
   }
 #+end_src
 
-
 * Shell
+
 #+begin_src sh
 hello
 #+end_src
@@ -29,6 +28,12 @@ hello
 #+end_src
 
 * C
+
+#+name: nix-c-dependencies
+#+begin_src nix
+  pkgs.pkg-config
+  pkgs.cairo
+#+end_src
 
 #+name: c-cairo-flags
 #+begin_src sh
@@ -49,12 +54,14 @@ hello
     cairo_rectangle (cr, 0.25, 0.25, 0.5, 0.5);
     cairo_stroke (cr);
 
-    cairo_surface_write_to_png (surface, "hello.png");
+    cairo_surface_write_to_png (surface, "rectangle.png");
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
 
-    printf("hello.png");
+    printf("rectangle.png");
     return 0;
   }
 #+end_src
 
+#+results:
+[[file:rectangle.png]]
