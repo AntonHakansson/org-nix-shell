@@ -10,7 +10,7 @@ Under the hood, org-nix-shell uses [[https://github.com/purcell/envrc][envrc]] p
 #+begin_src org
   ,#+name: nix-shell
   ,#+begin_src nix
-    { pkgs: ? import <nixpkgs> {} }:
+    { pkgs ? import <nixpkgs> {} }:
     pkgs.mkShell {
       buildInputs = [ pkgs.hello ];
     }
