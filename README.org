@@ -34,6 +34,27 @@ Load the nix-shell environment with ~org-nix-shell-load-direnv~.
                 :repo "AntonHakansson/org-nix-shell"))
 #+end_src
 
+** Nix
+
+With ~emacsWithPackagesFromUsePackage~ you can do:
+#+begin_src nix
+  pkgs.emacsWithPackagesFromUsePackage {
+    config = ./init.el;
+    extraEmacsPackages = epkgs:
+      [(epkgs.trivialBuild rec {
+        pname = "org-nix-shell";
+        version = "0.1.0";
+        packageRequires = [ epkgs.envrc ];
+        src = pkgs.fetchFromGitHub {
+          owner = "AntonHakansson";
+          repo = pname;
+          rev = "be5c383617e007bcf52985c70add3760ab236eb4";
+          sha256 = "sha256-iBJSdnsJtZyeVKQREOU2PkjxaKkmBeftMTaRDQMGo7U=";
+        };
+      })];
+  };
+#+end_src
+
 * Customization
 
 =M-x customize-group org-nix-shell= to see available customizable variables.
