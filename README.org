@@ -3,22 +3,25 @@
 #+html: <p>Buffer-local nix-shell environment in org-mode.</p>
 #+html: </div>
 
-This package is experimental; expect bugs.
-Under the hood, org-nix-shell uses [[https://github.com/purcell/envrc][envrc]] package for loading a direnv environment from a temporary directory.
+This package is experimental; expect bugs and breaking changes.
+
+Use nix shells directly in org-mode and org-babel src blocks.
+org-nix-shell works by loading a [[https://direnv.net/][direnv]] environment, constructed on demand, in an out-of-tree directory.
+The package [[https://github.com/purcell/envrc][envrc]] does all the heavy lifting.
 
 * Quickstart
 
 #+begin_src org
-  ,#+name: nix-shell
+  ,#+name: nix-shell # required (but customizable)
   ,#+begin_src nix
     { pkgs ? import <nixpkgs> {} }:
     pkgs.mkShell {
-      buildInputs = [ pkgs.hello ];
+      buildInputs = [ pkgs.hello ];  # list dependencies for this org buffer
     }
   ,#+end_src
 
   ,#+begin_src sh
-    hello
+    hello  # Use 'hello' dependency
   ,#+end_src
 #+end_src
 
