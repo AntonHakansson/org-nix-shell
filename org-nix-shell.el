@@ -65,7 +65,7 @@
 
 (defcustom org-nix-shell-get-direnv-path #'org-nix-shell--default-direnv-path
   "Function to get path to a per-buffer direnv directory."
-  :type function
+  :type 'function
   :options '(#'org-nix-shell--default-direnv-path)
   :group 'org-nix-shell)
 
