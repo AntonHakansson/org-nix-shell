@@ -91,7 +91,7 @@ Use format string %s to get the direnv path."
 
 (defun org-nix-shell-ctrl-c-ctrl-c ()
   "If point is at a src block load the environment."
-  (when (org-element-type (org-element-at-point) 'src-block)
+  (when (equal (org-element-type (org-element-at-point)) 'src-block)
     (org-nix-shell-load-direnv)))
 
 ;;;###autoload
@@ -130,10 +130,11 @@ Use format string %s to get the direnv path."
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode nil
   "Toggle org-nix-shell-mode."
+  :global t
   (if org-nix-shell-mode
       (progn
-        (add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-nix-shell-ctrl-c-ctrl-c))
-    (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-nix-shell-ctrl-c-ctrl-c)))
+        (add-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c))
+    (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c)))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here
