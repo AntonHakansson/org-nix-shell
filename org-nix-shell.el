@@ -105,7 +105,9 @@ Use format string %s to get the direnv path."
       (insert (format org-nix-shell-envrc-format direnv-path))
       (write-file dotenvrc-path nil))
     (let ((default-directory direnv-path))
-      (envrc-allow))))
+      ;; TODO: allow once and reload only when necessary
+      (envrc-allow)
+      (envrc-reload))))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here
