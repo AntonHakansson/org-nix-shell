@@ -1,6 +1,6 @@
 #+html: <div align=center>
-html: <h2 align=center>org-nix-shell</h2>
-#+html: <p>Emacs package that loads a buffer-local [[https://nixos.org/manual/nix/stable/command-ref/nix-shell][nix-shell]] environment from an org-mode src block.</p>
+#+html: <h2 align=center>org-nix-shell</h2>
+#+html: <p>Emacs package that loads a buffer-local nix-shell environment from an org-mode src block.</p>
 #+html: </div>
 
 Under the hood, org-nix-shell uses [[https://github.com/purcell/envrc][envrc]] package for loading a direnv environment from a temporary directory.
