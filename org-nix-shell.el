@@ -59,34 +59,36 @@
 (require 'envrc)
 
 (defgroup org-nix-shell nil
-  "Load a nix shell environment locally in `org-mode'."
+  "Buffer-local nix shell environment in `org-mode'."
   :link '(url-link :tag "Homepage" "https://github.com/AntonHakansson/org-nix-shell")
   :prefix "org-nix-shell-")
 
 (defcustom org-nix-shell-get-direnv-path #'org-nix-shell--default-direnv-path
-  "Location of direnv directory."
+  "Function to get path to a per-buffer direnv directory."
+  :type function
   :options '(#'org-nix-shell--default-direnv-path)
   :group 'org-nix-shell)
 
 (defcustom org-nix-shell-src-block-name "nix-shell"
-  "Unique src block name to tangle the nix-shell src block."
+  "What src block name to look for to find the nix shell environment. Should be unique."
   :type 'string
   :options '("nix-shell")
   :group 'org-nix-shell)
 
-(defcustom org-nix-shell-envrc-format "use nix # %s"
-  "Direnv .envrc file content."
+(defcustom org-nix-shell-envrc-format "use nix"
+  "The content of `.envrc'.
+Use format string %s to get the direnv path."
   :type 'string
-  :options '("use nix # %s")
+  :options '("use nix")
   :group 'org-nix-shell)
 
 (defun org-nix-shell--default-direnv-path ()
-  "The default direnv path based on the buffer name."
+  "The default path used for the direnv environment."
   (format "/tmp/org-nix-shell/%s/" (abs (sxhash (buffer-name)))))
 
 ;;;###autoload
 (defun org-nix-shell-load-direnv ()
-  "Load nix-shell environment from src block with name `org-nix-shell-src-block-name'."
+  "Construct and load nix shell environment from src block with name `org-nix-shell-src-block-name'."
   (interactive)
   (let* ((direnv-path (funcall org-nix-shell-get-direnv-path))
          (nix-shell-path (concat direnv-path "shell.nix"))
