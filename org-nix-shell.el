@@ -128,7 +128,7 @@ Use format string %s to get the direnv path."
         (envrc-reload)))))
 
 ;;;###autoload
-(define-minor-mode org-nix-shell-mode
+(define-minor-mode org-nix-shell-mode nil
   "Toggle org-nix-shell-mode."
   (if org-nix-shell-mode
       (progn
