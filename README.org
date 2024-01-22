@@ -1,0 +1,39 @@
+#+html: <div align=center>
+html: <h2 align=center>org-nix-shell</h2>
+#+html: <p>Emacs package that loads a buffer-local [[https://nixos.org/manual/nix/stable/command-ref/nix-shell][nix-shell]] environment from an org-mode src block.</p>
+#+html: </div>
+
+Under the hood, org-nix-shell uses [[https://github.com/purcell/envrc][envrc]] package for loading a direnv environment from a temporary directory.
+
+* Quickstart
+
+#+begin_src org
+  ,#+name: nix-shell
+  ,#+begin_src nix
+    { pkgs: ? import <nixpkgs> {} }:
+    pkgs.mkShell {
+      buildInputs = [ pkgs.hello ];
+    }
+  ,#+end_src
+
+  ,#+begin_src sh
+    hello
+  ,#+end_src
+#+end_src
+
+Load the nix-shell environment with ~org-nix-shell-load-direnv~.
+
+* Installation
+** Straight
+
+#+begin_src elisp
+  (use-package org-nix-shell
+    :straight '(org-nix-shell :type git
+                :host github
+                :repo "AntonHakansson/org-nix-shell")
+    :hook (org-mode . org-nix-shell-load-direnv))
+#+end_src
+
+* Customization
+
+=M-x customize-group org-nix-shell= to see available customizable variables.

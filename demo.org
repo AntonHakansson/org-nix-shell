@@ -1,0 +1,34 @@
+
+First, load nix-shell environment by running [[elisp:(org-nix-shell-load-direnv)]].
+
+#+name: nix-shell
+#+begin_src nix
+  { pkgs ? import <nixpkgs> {}, pythonPackages ? pkgs.python3Packages }:
+  pkgs.mkShell {
+    buildInputs = [
+      pythonPackages.sympy
+      pkgs.hello
+    ];
+  }
+#+end_src
+
+Then, the packages are available in org src blocks.
+
+#+begin_src sh
+hello
+#+end_src
+
+#+results:
+| Hello | world! |
+
+#+begin_src python :results drawer output
+  from sympy import *
+  x = symbols('x');
+  expr = 10**x
+  print("\\[ \\int" + latex(expr) + " = " + latex(integrate(expr)) + " \\]")
+#+end_src
+
+#+results:
+:results:
+\[ \int10^{x} = \frac{10^{x}}{\log{\left(10 \right)}} \]
+:end:
