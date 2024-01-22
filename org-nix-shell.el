@@ -55,11 +55,11 @@
 ;; Version 0.1.0
 ;; - Initial release
 ;;
-;;; Code
+;;; Code:
 (require 'envrc)
 
 (defgroup org-nix-shell nil
-  "Load a nix shell environment locally in org-mode."
+  "Load a nix shell environment locally in `org-mode'."
   :link '(url-link :tag "Homepage" "https://github.com/AntonHakansson/org-nix-shell")
   :prefix "org-nix-shell-")
 
@@ -69,7 +69,7 @@
   :group 'org-nix-shell)
 
 (defcustom org-nix-shell-src-block-name "nix-shell"
-  "Unique src block name to tangle the nix-shell src block"
+  "Unique src block name to tangle the nix-shell src block."
   :type 'string
   :options '("nix-shell")
   :group 'org-nix-shell)
@@ -81,11 +81,12 @@
   :group 'org-nix-shell)
 
 (defun org-nix-shell--default-direnv-path ()
+  "The default direnv path based on the buffer name."
   (format "/tmp/org-nix-shell/%s/" (abs (sxhash (buffer-name)))))
 
 ;;;###autoload
 (defun org-nix-shell-load-direnv ()
-  "Loads nix-shell environment from src block with name `org-nix-shell-src-block-name'."
+  "Load nix-shell environment from src block with name `org-nix-shell-src-block-name'."
   (interactive)
   (let* ((direnv-path (funcall org-nix-shell-get-direnv-path))
          (nix-shell-path (concat direnv-path "shell.nix"))
@@ -95,7 +96,7 @@
       (let ((src-block (org-element-at-point)))
         (unless (and (equal (org-element-type src-block) 'src-block)
                      (equal (org-element-property :name src-block) org-nix-shell-src-block-name))
-          (error "org-nix-shell: no nix-shell block found in buffer")))
+          (error "org-nix-shell: No nix-shell src block found in buffer")))
       (make-directory direnv-path t)
       (org-babel-tangle '(4) nix-shell-path))
     (with-temp-buffer
