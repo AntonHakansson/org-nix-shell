@@ -5,7 +5,7 @@ Load nix shell environment with [[elisp:(org-nix-shell-load-direnv)]] and then e
   { pkgs ? import <nixpkgs> {}, pythonPackages ? pkgs.python3Packages }:
   pkgs.mkShell {
     buildInputs = [
-      pkgs.hello
+      pkgs.cowsay
       pythonPackages.sympy
       <<nix-c-dependencies>>
     ];
@@ -14,8 +14,8 @@ Load nix shell environment with [[elisp:(org-nix-shell-load-direnv)]] and then e
 
 * Shell
 
-#+begin_src sh
-hello
+#+begin_src sh :results output
+cowsay "hello from nix-shell"
 #+end_src
 
 * Python

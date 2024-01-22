@@ -5,7 +5,7 @@
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "27.1") ("envrc"))
+;; Package-Requires: ((emacs "27.1") (org) (envrc))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
 ;; This file is not part of GNU Emacs.
@@ -70,7 +70,7 @@
   :group 'org-nix-shell)
 
 (defcustom org-nix-shell-src-block-name "nix-shell"
-  "What src block name to look for to find the nix shell environment. Should be unique."
+  "A unique src block name that specify the nix shell environment."
   :type 'string
   :options '("nix-shell")
   :group 'org-nix-shell)
@@ -82,9 +82,17 @@ Use format string %s to get the direnv path."
   :options '("use nix")
   :group 'org-nix-shell)
 
+(defvar-local org-nix-shell--hash nil
+  "Hash of `org-nix-shell-src-block-name' source block.")
+
 (defun org-nix-shell--default-direnv-path ()
   "The default path used for the direnv environment."
   (format "/tmp/org-nix-shell/%s/" (abs (sxhash (buffer-name)))))
+
+(defun org-nix-shell-ctrl-c-ctrl-c ()
+  "If point is at a src block load the environment."
+  (when (org-element-type (org-element-at-point) 'src-block)
+    (org-nix-shell-load-direnv)))
 
 ;;;###autoload
 (defun org-nix-shell-load-direnv ()
@@ -92,22 +100,40 @@ Use format string %s to get the direnv path."
   (interactive)
   (let* ((direnv-path (funcall org-nix-shell-get-direnv-path))
          (nix-shell-path (concat direnv-path "shell.nix"))
-         (dotenvrc-path (concat direnv-path ".envrc")))
+         (dotenvrc-path (concat direnv-path ".envrc"))
+         (previous-hash org-nix-shell--hash))
+
+    ;; Tangle shell.nix
     (save-excursion
       (org-babel-goto-named-src-block org-nix-shell-src-block-name)
       (let ((src-block (org-element-at-point)))
         (unless (and (equal (org-element-type src-block) 'src-block)
                      (equal (org-element-property :name src-block) org-nix-shell-src-block-name))
-          (error "org-nix-shell: No nix-shell src block found in buffer")))
-      (make-directory direnv-path t)
-      (org-babel-tangle '(4) nix-shell-path))
+          (error "org-nix-shell: No nix-shell src block found in buffer"))
+        (setq org-nix-shell--hash (sxhash src-block))
+        (unless (eql org-nix-shell--hash previous-hash)
+          (make-directory direnv-path t)
+          (org-babel-tangle '(4) nix-shell-path))))
+
+    ;; Create .envrc
     (with-temp-buffer
       (insert (format org-nix-shell-envrc-format direnv-path))
       (write-file dotenvrc-path nil))
-    (let ((default-directory direnv-path))
-      ;; TODO: allow once and reload only when necessary
-      (envrc-allow)
-      (envrc-reload))))
+
+    ;; Load direnv
+    ;; TODO: show errors from nix-shell
+    (unless (eql org-nix-shell--hash previous-hash)
+      (let ((default-directory direnv-path))
+        (envrc-allow)
+        (envrc-reload)))))
+
+;;;###autoload
+(define-minor-mode org-nix-shell-mode
+  "Toggle org-nix-shell-mode."
+  (if org-nix-shell-mode
+      (progn
+        (add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-nix-shell-ctrl-c-ctrl-c))
+    (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-nix-shell-ctrl-c-ctrl-c)))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here

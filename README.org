@@ -26,7 +26,7 @@ The package [[https://github.com/purcell/envrc][envrc]] does all the heavy lifti
 #+end_src
 
 Before evaluating the src block load the specified nix shell with ~org-nix-shell-load-direnv~.
-See [[file:demo.org][demo.org]] for more examples in Python and C.
+See [[file:demo.org][demo.org]] with examples for Python and C.
 
 * Installation
 ** Straight
