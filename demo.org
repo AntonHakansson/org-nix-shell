@@ -10,6 +10,10 @@ Alternatively, use =org-nix-shell-load-direnv= to load the environment manually.
       pythonPackages.sympy
       <<nix-c-dependencies>>
     ];
+    shellHook = ''
+      echo "Hello from shellHook!"
+    '';
+    MY_ENVIRONMENT_VAR = "Polyglot notebook in org-mode!";
   }
 #+end_src
 
@@ -17,6 +21,14 @@ Alternatively, use =org-nix-shell-load-direnv= to load the environment manually.
 
 #+begin_src sh :results output
 cowsay "hello from nix-shell"
+#+end_src
+
+
+#+begin_src sh :results output
+  echo "$MY_ENVIRONMENT_VAR"
+  eval "$shellHook" # run shellHook
+  printf "\nNow show me nix-related environment variables:\n\n"
+  env | grep "NIX_"
 #+end_src
 
 * Python
