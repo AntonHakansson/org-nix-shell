@@ -72,6 +72,7 @@
 
 (defgroup org-nix-shell nil
   "Buffer-local nix shell environment in `org-mode'."
+  :group 'extensions :group 'processes
   :link '(url-link :tag "Homepage" "https://github.com/AntonHakansson/org-nix-shell")
   :prefix "org-nix-shell-")
 
