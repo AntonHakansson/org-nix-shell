@@ -1,6 +1,7 @@
 #+html: <div align=center>
 #+html: <h2 align=center>org-nix-shell</h2>
 #+html: <p>Buffer-local nix-shell environment in org-mode.</p>
+#+html: <img src='img/showcase.png'>
 #+html: </div>
 
 This package is experimental; expect bugs and breaking changes.
