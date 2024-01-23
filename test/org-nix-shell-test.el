@@ -27,7 +27,17 @@
 (require 'ert)
 (require 'envrc)
 (require 'org)
+(require 'ob-shell)
 (require 'org-nix-shell)
+
+;; Test should run non-interactively.
+(setq org-confirm-babel-evaluate nil)
+(setq org-babel-load-languages
+ (mapcar (lambda (e) (cons e t))
+         '(emacs-lisp shell)))
+
+;; Enable envrc debug
+(setq envrc-debug t)
 
 (defmacro org-test-with-temp-text (text &rest body)
   "Run BODY in a temporary buffer with Org mode as the active mode holding TEXT.
@@ -55,18 +65,9 @@ point at the beginning of the inserted text."
 #+begin_src sh
 <point>echo \"org-nix-shell should not disrupt normal workflow\"
 #+end_src"
-    (org-nix-shell-mode)
+    (org-nix-shell-mode +1)
     (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
-    ;; WTH happens to (point) here...
-    ;;
-    ;; (goto-char (point-min))
-    ;; (should (search-forward "result")) ;; can't find result block in tests...
-    ;;
-    ;; (org-babel-where-is-src-block-result) ;; Not this either...
-    ;;
-    ;; Workaround for now...
-    (goto-char (point-max))
-    (previous-line)
+    (goto-char (should (org-babel-where-is-src-block-result)))
     (should (org-babel-read-result))))
 
 (ert-deftest org-nix-shell-test--basic-shell ()
@@ -79,11 +80,11 @@ point at the beginning of the inserted text."
 
 #+begin_src sh
   <point>hello
-#+end_src "
-    (org-nix-shell-mode)
+#+end_src"
+    (envrc-mode +1)
+    (org-nix-shell-mode +1)
     (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
-    (goto-char (point-max))
-    (previous-line)
+    (goto-char (should (org-babel-where-is-src-block-result)))
     (should (org-babel-read-result))))
 
 (provide 'org-nix-shell-test.el)

@@ -30,7 +30,7 @@ jobs:
         with:
           path: ~/.cask
           key: cache-cask-executable-000
-      - uses: cask/setup-cask@master
+      - uses: cask/setup-cask@v0.8.8
         if: steps.cache-cask-executable.outputs.cache-hit != 'true'
         with:
           version: snapshot
