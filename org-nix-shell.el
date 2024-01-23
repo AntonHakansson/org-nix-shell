@@ -25,11 +25,14 @@
 
 ;;; Commentary:
 ;;
-;; Load a buffer-local nix-shell environment from the current Org buffer.
+;;  Load a buffer-local nix-shell environment from the current Org buffer and use the
+;;  environment in org-mode and org-babel src blocks. `org-nix-shell' works by loading a
+;;  [[https://direnv.net/][direnv]] environment, constructed on demand, in an out-of-tree
+;;  directory
 ;;
-;; Basic Usage:
+;;; Basic Usage:
 ;;
-;; The src block must have the name `org-nix-shell-src-block-name'.
+;; First create a nix shell derivation in a src block named `nix-shell'.
 ;;
 ;; #+name: nix-shell
 ;; #+begin_src nix
@@ -41,13 +44,14 @@
 ;;   }
 ;; #+end_src
 ;;
-;; After `org-nix-shell-load-direnv', we can use the packages described in the nix shell
-;; from org-babel.
+;; Then, if `org-nix-shell-mode' is enabled, the shell environment loads before executing
+;; a org-babel src block.
 ;;
 ;; #+begin_src sh
 ;; hello
 ;; #+end_src
 ;;
+;; Alternatively you can also manually load the nix shell with `org-nix-shell-load-direnv'.
 ;;
 ;;
 ;;; NEWS:

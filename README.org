@@ -26,10 +26,20 @@ The package [[https://github.com/purcell/envrc][envrc]] does all the heavy lifti
   ,#+end_src
 #+end_src
 
-Before evaluating the src block load the specified nix shell with ~org-nix-shell-load-direnv~.
+Before evaluating the src block enable ~org-nix-shell-mode~ or manually load the nix shell with ~org-nix-shell-load-direnv~.
 See [[file:demo.org][demo.org]] with examples for Python and C.
 
 * Installation
+** Manual
+
+First, put [[file:org-nix-shell.el][org-nix-shell.el]] in your load path.
+Then evaluate:
+
+#+begin_src emacs-lisp
+  (require 'org-nix-shell)
+  (add-hook 'org-mode-hook 'org-nix-shell-mode)
+#+end_src
+
 ** Straight
 
 #+begin_src elisp
@@ -37,7 +47,8 @@ See [[file:demo.org][demo.org]] with examples for Python and C.
     :straight '(org-nix-shell
                 :type git
                 :host github
-                :repo "AntonHakansson/org-nix-shell"))
+                :repo "AntonHakansson/org-nix-shell")
+    :hook (org-mode . org-nix-shell-mode))
 #+end_src
 
 ** Nix
