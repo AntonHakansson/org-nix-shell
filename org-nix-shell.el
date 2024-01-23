@@ -99,7 +99,12 @@ Use format string %s to get the direnv path."
 (defun org-nix-shell-ctrl-c-ctrl-c ()
   "If point is at a src block load the environment."
   (when (equal (org-element-type (org-element-at-point)) 'src-block)
-    (org-nix-shell-load-direnv)))
+    ;; We dont want to error here because that blocks the babel execution. The only case
+    ;; where it makes sense to block is when there is a nix shell derivation error AND the
+    ;; src block depends on the nix-shell environment.
+    (condition-case nil
+        (org-nix-shell-load-direnv)
+      (error nil))))
 
 ;;;###autoload
 (defun org-nix-shell-load-direnv ()
