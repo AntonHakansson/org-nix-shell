@@ -107,6 +107,13 @@ Use format string %s to get the direnv path."
       (error nil))))
 
 ;;;###autoload
+(defun org-nix-shell-dired ()
+  "Open the direnv directory with dired."
+  (interactive)
+  (let ((direnv-path (funcall org-nix-shell-get-direnv-path)))
+        (dired direnv-path)))
+
+;;;###autoload
 (defun org-nix-shell-load-direnv ()
   "Construct and load nix shell environment from src block with name `org-nix-shell-src-block-name'."
   (interactive)
