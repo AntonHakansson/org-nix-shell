@@ -15,8 +15,9 @@ jobs:
           - 27.1
           - 28.2
           - 29.1
+          - snapshot
         cask_version:
-          - '0.8.8'
+          - '0.8.8' # latest version not available nixos-unstable yet...
     steps:
       - uses: actions/checkout@v2
       - uses: purcell/setup-emacs@master
