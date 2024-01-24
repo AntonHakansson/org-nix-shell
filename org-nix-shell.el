@@ -69,6 +69,7 @@
 ;;
 ;;; Code:
 (require 'org)
+(require 'org-element)
 (require 'envrc)
 
 (defgroup org-nix-shell nil
