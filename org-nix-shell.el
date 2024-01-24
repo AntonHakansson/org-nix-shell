@@ -136,7 +136,6 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
          (dotenvrc-path (concat direnv-path ".envrc"))
          (previous-hash org-nix-shell--hash))
 
-    ;; Tangle shell.nix
     (save-excursion
       (let ((point (org-babel-find-named-block org-nix-shell-src-block-name)))
         (if point
@@ -145,20 +144,36 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
       (let ((src-block (org-element-at-point)))
         (setq-local org-nix-shell--hash (sxhash src-block))
         (unless (eql org-nix-shell--hash previous-hash)
+          (message "Setting up initial direnv directory")
           (make-directory direnv-path t)
-          (org-babel-tangle '(4) nix-shell-path))))
-
-    ;; Create .envrc
-    (with-temp-buffer
-      (insert (format org-nix-shell-envrc-format direnv-path))
-      (write-file dotenvrc-path nil))
+          ;; Tangle shell.nix
+          (org-babel-tangle '(4) nix-shell-path)
+          ;; Format and write .envrc
+          (unless (file-exists-p dotenvrc-path)
+            (with-temp-buffer
+              (insert (format org-nix-shell-envrc-format direnv-path))
+              (write-file dotenvrc-path nil))
+            ;; Allow direnv directory
+            (let ((default-directory direnv-path))
+              (condition-case nil
+                  (envrc-allow)
+                (error nil)))))))
 
     ;; Load direnv
-    ;; TODO: show errors from nix-shell
-    (unless (eql org-nix-shell--hash previous-hash)
-      (let ((default-directory direnv-path))
-        (envrc-allow)
-        (envrc-reload)))))
+    (let* ((default-directory direnv-path))
+      (if (eql org-nix-shell--hash previous-hash)
+          (progn
+            ;; (message "Using cached variables")
+            ;; (envrc--update-env direnv-path)
+            nil)
+        ;; envrc package calls direnv similarily as we do here but on my machine direnv
+        ;; always returns zero exit code(success). We rely on 'nix-shell' command for
+        ;; displaying nix-shell derivation errors instead.
+        (let ((exit-code (envrc--call-process-with-global-env "nix-shell" nil (get-buffer-create "*org-nix-shell*") nil "shell.nix" "--command" "\"exit\"")))
+          (if (zerop exit-code)
+              (envrc-reload)
+            (display-buffer "*org-nix-shell*")
+            (user-error "Error running nix-shell")))))))
 
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode
