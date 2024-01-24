@@ -156,8 +156,8 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
         (envrc-reload)))))
 
 ;;;###autoload
-(define-minor-mode org-nix-shell-mode nil
-  "Toggle org-nix-shell-mode."
+(define-minor-mode org-nix-shell-mode
+  "Toggle `org-nix-shell-mode'."
   :global t
   (if org-nix-shell-mode
       (progn
