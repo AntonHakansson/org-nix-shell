@@ -74,6 +74,7 @@
 ;;; Code:
 (require 'org)
 (require 'org-element)
+(require 'org-fold)
 (require 'envrc)
 
 (defgroup org-nix-shell nil
@@ -137,12 +138,12 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
 
     ;; Tangle shell.nix
     (save-excursion
-      (org-babel-goto-named-src-block org-nix-shell-src-block-name)
+      (let ((point (org-babel-find-named-block org-nix-shell-src-block-name)))
+        (if point
+            (progn (goto-char point) (org-fold-show-context))
+          (user-error "`%s' src block not found in buffer" org-nix-shell-src-block-name)))
       (let ((src-block (org-element-at-point)))
-        (unless (and (equal (org-element-type src-block) 'src-block)
-                     (equal (org-element-property :name src-block) org-nix-shell-src-block-name))
-          (error "org-nix-shell: No nix-shell src block found in buffer"))
-        (setq org-nix-shell--hash (sxhash src-block))
+        (setq-local org-nix-shell--hash (sxhash src-block))
         (unless (eql org-nix-shell--hash previous-hash)
           (make-directory direnv-path t)
           (org-babel-tangle '(4) nix-shell-path))))
@@ -165,6 +166,7 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
   :global t
   (if org-nix-shell-mode
       (progn
+        (envrc-mode +1)
         (add-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c))
     (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c)))
 
