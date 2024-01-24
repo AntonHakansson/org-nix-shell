@@ -30,6 +30,9 @@ Before evaluating the src block enable ~org-nix-shell-mode~ or manually load the
 See [[file:demo.org][demo.org]] with examples for Python and C.
 
 * Installation
+
+Make sure [[https://direnv.net/][direnv]] is installed on your system ([[https://github.com/nix-community/nix-direnv#installation][nix-community/nix-direnv#Installation]]).
+
 ** Manual
 
 First, put [[file:org-nix-shell.el][org-nix-shell.el]] in your load path.
@@ -60,7 +63,7 @@ With ~emacsWithPackagesFromUsePackage~ you can do:
     extraEmacsPackages = epkgs:
       [(epkgs.trivialBuild rec {
         pname = "org-nix-shell";
-        version = "v0.1.3";
+        version = "v0.1.4";
         packageRequires = [ epkgs.envrc ];
         src = pkgs.fetchFromGitHub {
           owner = "AntonHakansson";
