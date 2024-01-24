@@ -37,6 +37,9 @@ jobs:
         with:
           version: snapshot
       - run: echo "$HOME/.cask/bin" >> $GITHUB_PATH
+      - name: Install direnv with Nix
+        run: nix profile install nixpkgs#direnv
+      - run: echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
       - name: Check emacs version
         run: emacs --version
       - name: Run tests
