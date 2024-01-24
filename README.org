@@ -60,12 +60,12 @@ With ~emacsWithPackagesFromUsePackage~ you can do:
     extraEmacsPackages = epkgs:
       [(epkgs.trivialBuild rec {
         pname = "org-nix-shell";
-        version = "v0.1.2";
+        version = "v0.1.3";
         packageRequires = [ epkgs.envrc ];
         src = pkgs.fetchFromGitHub {
           owner = "AntonHakansson";
           repo = pname;
-          rev = ${version};
+          rev = version;
           sha256 = lib.fakeHash;
         };
       })];

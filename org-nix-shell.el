@@ -4,7 +4,7 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Package-Requires: ((emacs "27.1") (org) (envrc))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
@@ -55,6 +55,10 @@
 ;;
 ;;
 ;;; NEWS:
+;; Version 0.1.3
+;; - Small bug fixes and missing dependencies
+;; - Continuous Integration and testing workflow
+;;
 ;; Version 0.1.2
 ;; - Introduced `org-nix-shell-dired' that opens the direnv directory with dired.
 ;; - Fixed `org-nix-shell-ctrl-c-ctrl-c' to never block babel execution.
