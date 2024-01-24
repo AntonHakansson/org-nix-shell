@@ -4,7 +4,7 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Package-Requires: ((emacs "27.1") (org) (envrc))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
@@ -55,6 +55,11 @@
 ;;
 ;;
 ;;; NEWS:
+;; Version 0.1.4
+;; - Display shell.nix derivation errors.
+;; - Don't reload envrc every time.
+;; - More tests.
+;;
 ;; Version 0.1.3
 ;; - Small bug fixes and missing dependencies
 ;; - Continuous Integration and testing workflow
