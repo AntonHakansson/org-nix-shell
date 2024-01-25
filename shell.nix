@@ -1,15 +1,11 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}, emacs ? pkgs.emacs, cask ? pkgs.cask }:
 pkgs.mkShell {
   # nix-shell shell.nix -I nixpkgs=channel:nixos-unstable --pure --command "make test"
   buildInputs = [
     pkgs.git
     pkgs.nix
-    pkgs.cask
-    pkgs.coreutils
-    pkgs.which
-    pkgs.python3
+    cask
     pkgs.direnv
-    pkgs.emacs
-    pkgs.emacsPackages.org
+    emacs
   ];
 }

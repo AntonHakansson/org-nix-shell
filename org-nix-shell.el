@@ -5,7 +5,7 @@
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
 ;; Version: 0.2.0
-;; Package-Requires: ((emacs "27.1") (org) (envrc))
+;; Package-Requires: ((emacs "27.1") (org) (envrc) (seq))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
 ;; This file is not part of GNU Emacs.
@@ -159,7 +159,7 @@ Use format string %s to get the direnv path."
 (defun org-nix-shell--default-direnv-path (nix-shell-name)
   "The default path used for the direnv environment."
   (let ((hash (abs (sxhash `(nix-shell-name ,(default-value 'process-environment))))))
-    (format "%s/org-nix-shell/%s/" (org-babel-temp-stable-directory) hash)))
+    (format "/tmp/org-nix-shell/%s/" hash)))
 
 (defun org-nix-shell--clear-env ()
   (envrc--clear (current-buffer))
@@ -250,15 +250,42 @@ ORIG-FUN, ARG, INFO, PARAMS"
           (org-nix-shell--clear-env)))))
   (funcall orig-fun arg info params executor-type))
 
+(defun org-nix-shell--advice-28 (orig-fun &optional arg info params)
+  "Evaluate nix shell from :nix-shell header argument before executing src block.
+Intended to be used as a advice around `org-babel-execute-src-block'.
+ORIG-FUN, ARG, INFO, PARAMS"
+  ;; Ideally we would like something like a org-babel-before-execute-hook instead of
+  ;; "advice"
+  (let* ((org-babel-current-src-block-location
+          (or org-babel-current-src-block-location
+              (nth 5 info)
+              (org-babel-where-is-src-block-head)))
+         (info (if info (copy-tree info) (org-babel-get-src-block-info))))
+    ;; Merge PARAMS with INFO before considering source block
+    ;; evaluation since both could disagree.
+    (cl-callf org-babel-merge-params (nth 2 info) params)
+    (when (org-babel-check-evaluate info)
+      (cl-callf org-babel-process-params (nth 2 info))
+      (let* ((params (nth 2 info))
+             (nix-shell-cons-cell (assq :nix-shell params))
+             (nix-shell-name (cdr nix-shell-cons-cell)))
+        (if nix-shell-name
+            (org-nix-shell-eval nix-shell-name)
+          (org-nix-shell--clear-env)))))
+  (funcall orig-fun arg info params))
+
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode
   "Toggle `org-nix-shell-mode'."
   :global t
-  (if org-nix-shell-mode
+  (let ((babel-execute-advice (if (< emacs-major-version 29)
+                                  #'org-nix-shell--advice-28
+                                #'org-nix-shell--advice)))
+    (if org-nix-shell-mode
       (progn
         (envrc-mode +1)
-        (advice-add 'org-babel-execute-src-block :around #'org-nix-shell--advice))
-    (advice-remove 'org-babel-execute-src-block #'org-nix-shell--advice)))
+        (advice-add 'org-babel-execute-src-block :around babel-execute-advice))
+    (advice-remove 'org-babel-execute-src-block babel-execute-advice))))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here
