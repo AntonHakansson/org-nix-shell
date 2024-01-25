@@ -57,8 +57,8 @@
 ;;; NEWS:
 ;; Version 0.1.4
 ;; - Display shell.nix derivation errors.
-;; - Don't reload envrc on org-ctrl-c-ctrl-c every time; reload only when nix shell src
-;;   block change.
+;; - Fix `org-nix-shell--ctrl-c-ctrl-c': don't reload direnv every time; reload only when
+;;   nix shell src block change.
 ;; - More tests.
 ;;
 ;; Version 0.1.3
@@ -67,7 +67,7 @@
 ;;
 ;; Version 0.1.2
 ;; - Introduced `org-nix-shell-dired' that opens the direnv directory with dired.
-;; - Fixed `org-nix-shell-ctrl-c-ctrl-c' to never block babel execution.
+;; - Fixed `org-nix-shell--ctrl-c-ctrl-c': never block babel execution.
 ;; - Updated docs.
 ;;
 ;; Version 0.1.1
@@ -115,7 +115,7 @@ Use format string %s to get the direnv path."
   (let ((hash (abs (sxhash `(,(buffer-name) ,(default-value 'process-environment))))))
     (format "/tmp/org-nix-shell/%s/" hash)))
 
-(defun org-nix-shell-ctrl-c-ctrl-c ()
+(defun org-nix-shell--ctrl-c-ctrl-c ()
   "If point is at a src block load the environment."
   (when (equal (org-element-type (org-element-at-point)) 'src-block)
     ;; We dont want to error here because that blocks the babel execution. The only case
@@ -124,6 +124,16 @@ Use format string %s to get the direnv path."
     (condition-case nil
         (org-nix-shell-load-direnv)
       (error nil))))
+
+(defun org-nix-shell--before-export (backend)
+  "Load nix shell before `org-export'.
+BACKEND is a symbor referring to a registered back-end."
+  ;; We dont want to error here because that prohibits org-export from completing.
+  ;; It makes sense to block is when there is a nix shell derivation error AND the src
+  ;; block depends on the nix-shell environment.
+  (condition-case nil
+      (org-nix-shell-load-direnv)
+    (error nil)))
 
 ;;;###autoload
 (defun org-nix-shell-dired ()
@@ -188,8 +198,10 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
   (if org-nix-shell-mode
       (progn
         (envrc-mode +1)
-        (add-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c))
-    (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell-ctrl-c-ctrl-c)))
+        (add-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell--ctrl-c-ctrl-c)
+        (add-hook 'org-export-before-processing-functions #'org-nix-shell--before-export))
+    (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-nix-shell--ctrl-c-ctrl-c)
+    (remove-hook 'org-export-before-processing-functions #'org-nix-shell--before-export)))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here

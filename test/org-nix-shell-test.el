@@ -140,5 +140,21 @@ point at the beginning of the inserted text."
     (org-nix-shell-mode +1)
     (should-error (org-nix-shell-load-direnv))))
 
+(ert-deftest org-nix-shell-test--export-noop ()
+  (org-test-with-temp-text (concat "
+#+begin_src sh :exports both
+<point>echo \"org-nix-shell should not disrupt normal org-export\"
+#+end_src")
+    (org-nix-shell-mode +1)
+    (should (org-export-as 'html))))
+
+(ert-deftest org-nix-shell-test--export-basic-shell ()
+  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
+#+begin_src sh :exports both
+<point>hello
+#+end_src")
+    (org-nix-shell-mode +1)
+    (should (org-export-as 'html))))
+
 (provide 'org-nix-shell-test.el)
 ;;; org-nix-shell-test.el ends here
