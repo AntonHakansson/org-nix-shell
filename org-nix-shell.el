@@ -57,7 +57,8 @@
 ;;; NEWS:
 ;; Version 0.1.4
 ;; - Display shell.nix derivation errors.
-;; - Don't reload envrc every time.
+;; - Don't reload envrc on org-ctrl-c-ctrl-c every time; reload only when nix shell src
+;;   block change.
 ;; - More tests.
 ;;
 ;; Version 0.1.3
@@ -144,7 +145,7 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
     (save-excursion
       (let ((point (org-babel-find-named-block org-nix-shell-src-block-name)))
         (if point
-            (progn (goto-char point) (org-fold-show-context))
+            (goto-char point)
           (user-error "`%s' src block not found in buffer" org-nix-shell-src-block-name)))
       (let ((src-block (org-element-at-point)))
         (setq-local org-nix-shell--hash (sxhash src-block))
@@ -173,12 +174,12 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
             nil ; I have to return nil here, otherwise org-ctrl-c-ctrl-c does not execute src block?
             )
         ;; On my machine direnv always returns zero exit code(success). We rely on
-        ;; 'nix-shell' command for displaying nix-shell derivation errors instead.
-        (let ((exit-code (envrc--call-process-with-global-env "nix-shell" nil (get-buffer-create "*org-nix-shell*") nil "shell.nix" "--command" "\"exit\"")))
+        ;; 'nix-instantiate' command for nix-shell derivation errors instead.
+        (let ((exit-code (envrc--call-process-with-global-env "nix-instantiate" nil (get-buffer-create "*org-nix-shell*") nil "shell.nix")))
           (if (zerop exit-code)
               (envrc-reload)
             (display-buffer "*org-nix-shell*")
-            (user-error "Error running nix-shell")))))))
+            (user-error "Error running nix-instantiate")))))))
 
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode

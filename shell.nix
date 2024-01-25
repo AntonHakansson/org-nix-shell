@@ -1,7 +1,9 @@
 { pkgs ? import <nixpkgs> {} }:
 pkgs.mkShell {
+  # nix-shell shell.nix -I nixpkgs=channel:nixos-unstable --pure --command "make test"
   buildInputs = [
     pkgs.git
+    pkgs.nix
     pkgs.cask
     pkgs.coreutils
     pkgs.which
