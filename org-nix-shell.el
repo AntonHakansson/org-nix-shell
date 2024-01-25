@@ -82,6 +82,12 @@
 (require 'org-element)
 (require 'envrc)
 
+;; REVIEW: Drop dependency on envrc and direnv? Use nix-shell directly - how can I get
+;;         shell environment variables using nix?
+;; REVIEW: Require that src blocks must have a :nix-shell header argument? If so, we know
+;;         when a src block expect a nix-shell. Then if a nix derivation fails we can
+;;         hard-error and cancel the babel/export process.
+
 (defgroup org-nix-shell nil
   "Buffer-local nix shell environment in `org-mode'."
   :group 'extensions :group 'processes
@@ -118,19 +124,20 @@ Use format string %s to get the direnv path."
 (defun org-nix-shell--ctrl-c-ctrl-c ()
   "If point is at a src block load the environment."
   (when (equal (org-element-type (org-element-at-point)) 'src-block)
-    ;; We dont want to error here because that blocks the babel execution. The only case
-    ;; where it makes sense to block is when there is a nix shell derivation error AND the
-    ;; src block depends on the nix-shell environment.
+    ;; We don't want to error here because that cancels the babel execution in cases where
+    ;; there is no dependency on a nix-shell.
+    ;; The only case where it makes sense to block is when there is a nix shell derivation
+    ;; error AND the src block depends on the nix-shell environment.
     (condition-case nil
         (org-nix-shell-load-direnv)
       (error nil))))
 
 (defun org-nix-shell--before-export (backend)
   "Load nix shell before `org-export'.
-BACKEND is a symbor referring to a registered back-end."
-  ;; We dont want to error here because that prohibits org-export from completing.
-  ;; It makes sense to block is when there is a nix shell derivation error AND the src
-  ;; block depends on the nix-shell environment.
+BACKEND is a symbol referring to a registered back-end."
+  (ignore backend)
+  ;; We don't want to error here because that cancels the org export process in cases
+  ;; where there is no dependency on a nix-shell.
   (condition-case nil
       (org-nix-shell-load-direnv)
     (error nil)))
