@@ -79,7 +79,6 @@
 ;;; Code:
 (require 'org)
 (require 'org-element)
-(require 'org-fold)
 (require 'envrc)
 
 (defgroup org-nix-shell nil
@@ -112,7 +111,8 @@ Use format string %s to get the direnv path."
 
 (defun org-nix-shell--default-direnv-path ()
   "The default path used for the direnv environment."
-  (format "/tmp/org-nix-shell/%s/" (abs (sxhash (buffer-name)))))
+  (let ((hash (abs (sxhash `(,(buffer-name) ,(default-value 'process-environment))))))
+    (format "/tmp/org-nix-shell/%s/" hash)))
 
 (defun org-nix-shell-ctrl-c-ctrl-c ()
   "If point is at a src block load the environment."
@@ -170,10 +170,10 @@ Constructs direnv from src block with name `org-nix-shell-src-block-name'."
           (progn
             ;; (message "Using cached variables")
             ;; (envrc--update-env direnv-path)
-            nil)
-        ;; envrc package calls direnv similarily as we do here but on my machine direnv
-        ;; always returns zero exit code(success). We rely on 'nix-shell' command for
-        ;; displaying nix-shell derivation errors instead.
+            nil ; I have to return nil here, otherwise org-ctrl-c-ctrl-c does not execute src block?
+            )
+        ;; On my machine direnv always returns zero exit code(success). We rely on
+        ;; 'nix-shell' command for displaying nix-shell derivation errors instead.
         (let ((exit-code (envrc--call-process-with-global-env "nix-shell" nil (get-buffer-create "*org-nix-shell*") nil "shell.nix" "--command" "\"exit\"")))
           (if (zerop exit-code)
               (envrc-reload)
