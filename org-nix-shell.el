@@ -158,7 +158,8 @@ Use format string %s to get the direnv path."
 
 (defun org-nix-shell--default-direnv-path (nix-shell-name)
   "The default path used for the direnv environment."
-  (let ((hash (abs (sxhash `(nix-shell-name ,(default-value 'process-environment))))))
+  (let* ((obj (list nix-shell-name (default-value 'process-environment)))
+         (hash (abs (sxhash obj))))
     (format "/tmp/org-nix-shell/%s/" hash)))
 
 (defun org-nix-shell--clear-env ()
@@ -220,23 +221,7 @@ ORIG-FUN, ARG, INFO, PARAMS"
           (or org-babel-current-src-block-location
               (nth 5 info)
               (org-babel-where-is-src-block-head)))
-         (info (if info (copy-tree info) (org-babel-get-src-block-info)))
-         (executor-type
-          (or executor-type
-              ;; If `executor-type' is unset, then we will make an
-              ;; informed guess.
-              (pcase (and
-                      ;; When executing virtual src block, no location
-                      ;; is known.
-                      org-babel-current-src-block-location
-                      (char-after org-babel-current-src-block-location))
-                (?s 'inline-src-block)
-                (?c 'inline-babel-call)
-                (?# (pcase (char-after (+ 2 org-babel-current-src-block-location))
-                      (?b 'src-block)
-                      (?c 'call-block)
-                      (_ 'unknown)))
-                (_ 'unknown)))))
+         (info (if info (copy-tree info) (org-babel-get-src-block-info))))
     ;; Merge PARAMS with INFO before considering source block
     ;; evaluation since both could disagree.
     (cl-callf org-babel-merge-params (nth 2 info) params)
