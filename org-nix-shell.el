@@ -4,7 +4,7 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.1.4
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "27.1") (org) (envrc))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
