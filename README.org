@@ -13,20 +13,20 @@ The package [[https://github.com/purcell/envrc][envrc]] does all the heavy lifti
 * Quickstart
 
 #+begin_src org
-  ,#+name: nix-shell   # required, but name is customizable
+  ,#+name: nix-shell
   ,#+begin_src nix
     { pkgs ? import <nixpkgs> {} }:
     pkgs.mkShell {
-      buildInputs = [ pkgs.hello ];   # list dependencies for this org buffer
+      buildInputs = [ pkgs.hello ];
     }
   ,#+end_src
 
-  ,#+begin_src sh
+  ,#+begin_src sh :nix-shell "nix-shell"  # load named nix-shell src block
     hello   # use 'hello' dependency
   ,#+end_src
 #+end_src
 
-Before evaluating the src block enable ~org-nix-shell-mode~ or manually load the nix shell with ~org-nix-shell-load-direnv~.
+Enable =org-nix-shell-mode= and evaluate or export the buffer.
 See [[file:demo.org][demo.org]] with examples for Python and C.
 
 * Installation

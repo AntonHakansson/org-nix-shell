@@ -70,32 +70,21 @@ point at the beginning of the inserted text."
 <point>echo \"org-nix-shell should not disrupt normal workflow\"
 #+end_src")
     (org-nix-shell-mode +1)
-    (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
+    (should (org-babel-execute-src-block))
     (goto-char (should (org-babel-where-is-src-block-result)))
     (should (org-babel-read-result))))
 
 (ert-deftest org-nix-shell-test--basic-shell ()
   (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
-#+begin_src sh
+#+begin_src sh :nix-shell \"nix-shell\"
 <point>hello
 #+end_src")
     (org-nix-shell-mode +1)
-    (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
+    (should (org-babel-execute-src-block))
     (goto-char (should (org-babel-where-is-src-block-result)))
     (should (equal (org-babel-read-result) '(("Hello" "world!"))))))
 
-(ert-deftest org-nix-shell-test--basic-shell-no-hook ()
-  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
-#+begin_src sh
-<point>hello
-#+end_src")
-    (org-nix-shell-mode +1)
-    (org-nix-shell-load-direnv)
-    (should (org-babel-execute-src-block))
-    (goto-char (should (org-babel-where-is-src-block-result)))
-    (should (org-babel-read-result))))
-
-(ert-deftest org-nix-shell-test--soft-fail ()
+(ert-deftest org-nix-shell-test--invalid-nix-shell ()
   (org-test-with-temp-text "
 #+name: nix-shell
 #+begin_src nix
@@ -103,56 +92,22 @@ point at the beginning of the inserted text."
   pkgs.mkShbuildInputs = [ pkgs.hello ]; }
 #+end_src
 
-#+begin_src sh
+#+begin_src sh :nix-shell \"nix-shell\"
   <point>hello
 #+end_src"
     (org-nix-shell-mode +1)
-    (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
-    (goto-char (should (org-babel-where-is-src-block-result)))
-    (should-not (org-babel-read-result))))
+    (should-error (org-babel-execute-src-block))))
 
-(ert-deftest org-nix-shell-test--soft-fail-missing-nix-shell ()
+(ert-deftest org-nix-shell-test--missing-shell ()
   (org-test-with-temp-text "
-#+begin_src sh
+#+begin_src sh :nix-shell \"nix-shell\"
   <point>hello
 #+end_src"
     (org-nix-shell-mode +1)
-    (org-ctrl-c-ctrl-c) ; org-babel-execute-src-block but run org-nix-shell hook
-    (goto-char (should (org-babel-where-is-src-block-result)))
-    (should-not (org-babel-read-result))))
+    (should-error (org-babel-execute-src-block))))
 
-
-(ert-deftest org-nix-shell-test--hard-fail ()
-  (org-test-with-temp-text "
-#+name: nix-shell
-#+begin_src nix
-  { pkgs ? import <nixpkgs> {} }:
-  pkgs.mkShbuildInputs = [ pkgs.hello ]; }
-#+end_src"
-    (org-nix-shell-mode +1)
-    (should-error (org-nix-shell-load-direnv))))
-
-(ert-deftest org-nix-shell-test--hard-fail-missing-nix-shell ()
-  (org-test-with-temp-text "
-#+begin_src sh
-  <point>hello
-#+end_src"
-    (org-nix-shell-mode +1)
-    (should-error (org-nix-shell-load-direnv))))
-
-(ert-deftest org-nix-shell-test--export-noop ()
-  (org-test-with-temp-text (concat "
-#+begin_src sh :exports both
-<point>echo \"org-nix-shell should not disrupt normal org-export\"
-#+end_src")
-    (org-nix-shell-mode +1)
-    (should (org-export-as 'html))))
-
-(ert-deftest org-nix-shell-test--export-basic-shell ()
-  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
-#+begin_src sh :exports both
-<point>hello
-#+end_src")
+(ert-deftest org-nix-shell-test--export-demo ()
+  (with-current-buffer (find-file "../demo.org")
     (org-nix-shell-mode +1)
     (should (org-export-as 'html))))
 

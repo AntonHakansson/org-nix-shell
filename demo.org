@@ -1,5 +1,8 @@
+#+title: Demo of =org-nix-shell=
+#+property: header-args :exports both
+#+property: header-args+ :nix-shell "nix-shell"
+
 Load =org-nix-shell-mode= and then execute the src blocks.
-Alternatively, use =org-nix-shell-load-direnv= to load the environment manually.
 
 #+name: nix-shell
 #+begin_src nix :noweb yes
@@ -20,9 +23,8 @@ Alternatively, use =org-nix-shell-load-direnv= to load the environment manually.
 * Shell
 
 #+begin_src sh :results output
-cowsay "hello from nix-shell"
+  cowsay "hello from nix-shell"
 #+end_src
-
 
 #+begin_src sh :results output
   echo "$MY_ENVIRONMENT_VAR"
@@ -71,5 +73,30 @@ cowsay "hello from nix-shell"
   cairo_surface_destroy(surface);
 
   printf("%s", filename);
+#+end_src
+
+* Separate nix-shell
+:PROPERTIES:
+:header-args+: :nix-shell "nix-shell-fortune"
+:END:
+
+#+name: nix-shell-fortune
+#+begin_src nix
+  { pkgs ? import <nixpkgs> {} }:
+  pkgs.mkShell {
+    buildInputs = [
+      pkgs.fortune
+    ];
+  }
+#+end_src
+
+#+begin_src sh :results output :exports both
+  fortune
+#+end_src
+
+We can alwyas override the nix-shell per source block.
+#+headers: :nix-shell "nix-shell"
+#+begin_src sh :results output
+  cowsay "hello from top-level nix-shell"
 #+end_src
 
