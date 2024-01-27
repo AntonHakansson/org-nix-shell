@@ -4,7 +4,7 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.3.0
+;; Version: 0.3.1
 ;; Package-Requires: ((emacs "27.1") (org) (json))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
@@ -173,7 +173,7 @@ NIX-SHELL-PATH is the path to a nix shell."
                   cached-direnv
                 (let* ((nix-shell-basename (concat "nix-shell-" name ".nix"))
                        (nix-shell-path (make-temp-file (concat
-                                                        (file-name-as-directory (or org-babel-temporary-directory "/tmp"))
+                                                        (file-name-as-directory "/tmp")
                                                         nix-shell-basename))))
                   (org-babel-tangle '(4) nix-shell-path)
                   (when-let ((direnv (org-nix-shell--direnv-dump-json nix-shell-path)))
@@ -242,7 +242,7 @@ ARGS is as for ORIG."
              ((default-value 'exec-path) exec-path))
     (apply func args)))
 
-(defun org-nix-shell--execute-src-block (orig-fun &optional arg info params &rest rest)
+(defun org-nix-shell--execute-src-block (orig-fun &optional arg info params executor-type)
   "Evaluate nix shell from :nix-shell header argument before executing src block.
 Intended to be used as a advice around `org-babel-execute-src-block'.
 ORIG-FUN, ARG, INFO, PARAMS"
@@ -250,10 +250,14 @@ ORIG-FUN, ARG, INFO, PARAMS"
     (if nix-shell-name
         (let* ((direnv (when nix-shell-name (org-nix-shell--get-direnv nix-shell-name)))
                (_ (when nix-shell-name (org-nix-shell--apply-env direnv)))
-               (ret (org-nix-shell--inheritenv-apply orig-fun arg info params rest))
+               (ret (if (>= emacs-major-version 28)
+                        (org-nix-shell--inheritenv-apply orig-fun arg info params executor-type)
+                     (org-nix-shell--inheritenv-apply orig-fun arg info params)))
                (_ (when nix-shell-name (org-nix-shell--clear-env))))
           ret)
-      (apply orig-fun arg info params rest))))
+      (if (>= emacs-major-version 28)
+          (apply orig-fun arg info params executor-type)
+        (apply orig-fun arg info params)))))
 
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode
