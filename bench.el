@@ -1,0 +1,10 @@
+(require 'org-nix-shell)
+
+(defun org-nix-shell--run-bench ()
+  (with-current-buffer (find-file "./demo.org")
+    (setq org-confirm-babel-evaluate nil)
+    (require 'org)
+    (require 'ob-shell)
+    (require 'ob-python)
+    (org-nix-shell-mode +1)
+    (org-export-to-file 'html "demo.html")))

@@ -12,9 +12,13 @@ cask: $(CASK_DIR)
 compile: cask
 	cask emacs -batch -L . -L test  \
           --eval "(setq byte-compile-error-on-warn t)" \
-	  -f batch-byte-compile $$(cask files); \
+	  -f batch-byte-compile org-nix-shell.el; \
 	  (ret=$$? ; cask clean-elc && exit $$ret)
 
 .PHONY: test
 test: compile
 	cask emacs --batch -L . -L test -l org-nix-shell-test.el -f ert-run-tests-batch
+
+.PHONY: bench
+bench: compile
+	hyperfine 'cask emacs --batch -L . -l bench.el -f org-nix-shell--run-bench'

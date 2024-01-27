@@ -4,8 +4,8 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.2.0
-;; Package-Requires: ((emacs "27.1") (org) (envrc) (seq))
+;; Version: 0.3.0
+;; Package-Requires: ((emacs "27.1") (org) (json))
 ;; Keywords: org-mode, org-babel, nix, nix-shell
 
 ;; This file is not part of GNU Emacs.
@@ -26,9 +26,6 @@
 ;;; Commentary:
 ;;
 ;;  Use a buffer-local nix-shell environment in org-babel src blocks.
-;;  `org-nix-shell' works by seamlessly loading a [[https://direnv.net/][direnv]]
-;;  environment, constructed on demand, in an out-of-tree directory before executing
-;;  source blocks.
 ;;
 ;;; Basic Usage:
 ;;
@@ -51,7 +48,7 @@
 ;; #+end_src
 ;;
 ;; Then, if `org-nix-shell-mode' is enabled, the shell environment is seamlessly loaded
-;; when executing a src block.
+;; when executing a src block or exporting.
 ;;
 ;; The :nix-shell header argument is like any other org-mode header argument and can be
 ;; configured with:
@@ -67,7 +64,17 @@
 ;;
 ;; See `demo.org' for more.
 ;;
+;;
 ;;; NEWS:
+;; Version 0.3.0   (lots of breaking changes)
+;; - Dropped dependency on envrc package. Instead we get the shell environment from
+;;   nix-shell using direnv's dump command. No more out-of-tree directory with .envrc.
+;;   This gives us a noticable performance win.
+;;
+;; - Removed `org-nix-shell-get-direnv-path', `org-nix-shell-envrc-format' and
+;;   `org-nix-shell-src-block-name'. Instead we tangle nix shells to org-babel's
+;;   temoporary directory.
+;;
 ;; Version 0.2.0   (lots of breaking changes)
 ;; - Source blocks must explicitly set ':nix-shell <named-src-block>' header argument to
 ;;   load a nix-shell. To use a nix-shell in a specific scope you can use a header-args property like:
@@ -118,10 +125,7 @@
 ;;; Code:
 (require 'org)
 (require 'org-element)
-(require 'envrc)
-
-;; REVIEW: Drop dependency on envrc and direnv? Use nix-shell directly - how can I get
-;;         shell environment variables using nix?
+(require 'json)
 
 (defgroup org-nix-shell nil
   "Buffer-local nix shell environment in `org-mode'."
@@ -129,94 +133,85 @@
   :link '(url-link :tag "Homepage" "https://github.com/AntonHakansson/org-nix-shell")
   :prefix "org-nix-shell-")
 
-(defcustom org-nix-shell-get-direnv-path #'org-nix-shell--default-direnv-path
-  "Function to get path to a per-buffer direnv directory."
-  :type 'function
-  :options '(#'org-nix-shell--default-direnv-path)
-  :group 'org-nix-shell)
+(defvar-local org-nix-shell--cache (make-hash-table :test 'equal :size 10)
+  "Cached nix-shell environment variables from `org-nix-shell--direnv-dump-json'.")
 
-(defcustom org-nix-shell-src-block-name "nix-shell"
-  "A unique src block name that specify the nix shell environment."
-  :type 'string
-  :options '("nix-shell")
-  :group 'org-nix-shell)
-
-(defcustom org-nix-shell-envrc-format "use nix"
-  "The content of `.envrc'.
-Use format string %s to get the direnv path."
-  :type 'string
-  :options '("use nix")
-  :group 'org-nix-shell)
-
-(defcustom org-nix-shell-nix-instantiate-executable "nix-instantiate"
-  "Executable to use for `nix-instantiate'."
-  :type 'string
-  :group 'org-nix-shell)
-
-(defvar-local org-nix-shell--hash nil
-  "Hash of src block.")
-
-(defun org-nix-shell--default-direnv-path (nix-shell-name)
-  "The default path used for the direnv environment."
-  (let* ((obj (list nix-shell-name (default-value 'process-environment)))
-         (hash (abs (sxhash obj))))
-    (format "/tmp/org-nix-shell/%s/" hash)))
-
-(defun org-nix-shell--clear-env ()
-  (envrc--clear (current-buffer))
-  (setq-local org-nix-shell--hash nil))
-
-(defun org-nix-shell-eval (name)
-  "Evaluate nix shell src block with name NAME and inherit environment.
-
-Constructs a direnv directory from src block with name NAME."
+;;;###autoload
+(defun org-nix-shell-invalidate-cache ()
   (interactive)
-  (let* ((direnv-path (funcall org-nix-shell-get-direnv-path name))
-         (nix-shell-path (concat direnv-path "shell.nix"))
-         (dotenvrc-path (concat direnv-path ".envrc"))
-         (src-block (save-excursion
-                      (let ((point (org-babel-find-named-block name)))
-                        (if point
-                            (progn
-                              (goto-char point)
-                              (make-directory direnv-path t)
-                              (org-babel-tangle '(4) nix-shell-path))
-                          (user-error "`%s' src block not found in buffer" name)))
-                      (org-element-at-point)))
-         (previous-hash org-nix-shell--hash))
+  (clrhash org-nix-shell--cache))
 
-    (setq-local org-nix-shell--hash (sxhash src-block))
+(defun org-nix-shell--direnv-dump-json (nix-shell-path)
+  "Returns output as json object of the command:
+$ nix-shell <nix-shell-path> --run \"direnv dump json\".
 
-    ;; Format and write .envrc
-    (unless (file-exists-p dotenvrc-path)
-      (with-temp-buffer
-        (insert (format org-nix-shell-envrc-format direnv-path))
-        (write-file dotenvrc-path nil))
-      ;; Allow direnv directory
-      (let ((default-directory direnv-path))
-        (condition-case nil
-            (envrc-allow)
-          (error nil))))
+NIX-SHELL-PATH is the path to a nix shell."
+  (with-current-buffer (get-buffer-create "*org-nix-shell*")
+    (erase-buffer)
+    ;; Output from $shellHook from shell.nix can clobber clean json dump
+    (let ((exit-code (call-process "nix-shell" nil t nil nix-shell-path "--run" "echo \"\n:direnv dump json:\"; direnv dump json")))
+      (if (zerop exit-code)
+          (let ((json-key-type 'string))
+            (goto-char (point-min))
+            (search-forward ":direnv dump json:")
+            (forward-line)
+            (json-read-object))
+        (display-buffer "*org-nix-shell*")
+        (user-error "Error running nix-shell")))))
 
-    (let* ((default-directory direnv-path))
-      (if (eql org-nix-shell--hash previous-hash)
-          ;; Same, unchanged, shell as last time, so we assume the shell environment is already loaded.
-          t
-        (org-nix-shell--clear-env)
-        ;; On my machine direnv always returns zero exit code(success). We rely on
-        ;; 'nix-instantiate' command for nix-shell derivation errors instead.
-        (let ((exit-code (envrc--call-process-with-global-env org-nix-shell-nix-instantiate-executable nil (get-buffer-create "*org-nix-shell*") nil "shell.nix")))
-          (if (zerop exit-code)
-              (envrc-reload)
-            (display-buffer "*org-nix-shell*")
-            (user-error "Error running nix-instantiate")))))))
+(defun org-nix-shell--get-direnv (name)
+  "Tries to find src block with name NAME and return the nix shell environment."
+  (save-excursion
+    (let ((point (org-babel-find-named-block name)))
+      (if point
+          (progn
+            (goto-char point)
+            (let* ((info (org-babel-get-src-block-info))
+                   (hash (abs (sxhash info)))
+                   (cached-direnv (gethash hash org-nix-shell--cache)))
+              (if cached-direnv
+                  cached-direnv
+                (let* ((nix-shell-basename (concat "nix-shell-" name ".nix"))
+                       (nix-shell-path (make-temp-file (concat
+                                                        (file-name-as-directory (or org-babel-temporary-directory "/tmp"))
+                                                        nix-shell-basename))))
+                  (org-babel-tangle '(4) nix-shell-path)
+                  (when-let ((direnv (org-nix-shell--direnv-dump-json nix-shell-path)))
+                    (puthash hash direnv org-nix-shell--cache))))))
+        (user-error "`%s' src block not found in buffer" name)))))
 
-(defun org-nix-shell--advice (orig-fun &optional arg info params executor-type)
-  "Evaluate nix shell from :nix-shell header argument before executing src block.
-Intended to be used as a advice around `org-babel-execute-src-block'.
-ORIG-FUN, ARG, INFO, PARAMS"
-  ;; Ideally we would like something like a org-babel-before-execute-hook instead of
-  ;; "advice"
+;; Thank you! https://github.com/purcell/envrc
+(defun org-nix-shell--merge-environment (process-env direnv)
+  "Make a `process-environment' value that merges PROCESS-ENV with DIRENV.
+DIRENV is an alist obtained from direnv's output.
+Values from PROCESS-ENV will be included, but their values will
+be masked by Emacs' handling of `process-environment' if they
+also appear in DIRENV."
+  (append (mapcar (lambda (pair)
+                    (if (cdr pair)
+                        (format "%s=%s" (car pair) (cdr pair))
+                      ;; Plain env name is the syntax for unsetting vars
+                      (car pair)))
+                  direnv)
+          process-env))
+
+;; Thank you! https://github.com/purcell/envrc
+(defun org-nix-shell--apply-env (direnv)
+  "Apply shell environment DIRENV."
+  (setq-local process-environment (org-nix-shell--merge-environment (default-value 'process-environment) direnv))
+  (let ((path (getenv "PATH"))) ;; Get PATH from the merged environment: direnv may not have changed it
+    (setq-local exec-path (parse-colon-path path))))
+
+;; Thank you! https://github.com/purcell/envrc
+(defun org-nix-shell--clear-env ()
+  "Remove shell environment set by `org-nix-shell--apply-env'"
+  (kill-local-variable 'exec-path)
+  (kill-local-variable 'process-environment))
+
+(defun org-nix-shell--process-params (info params)
+  "Return `:nix-shell' header argument from source block.
+
+INFO and PARAMS are arguments originally from `org-babel-execute-src-block'"
   (let* ((org-babel-current-src-block-location
           (or org-babel-current-src-block-location
               (nth 5 info)
@@ -227,50 +222,48 @@ ORIG-FUN, ARG, INFO, PARAMS"
     (cl-callf org-babel-merge-params (nth 2 info) params)
     (when (org-babel-check-evaluate info)
       (cl-callf org-babel-process-params (nth 2 info))
-      (let* ((params (nth 2 info))
-             (nix-shell-cons-cell (assq :nix-shell params))
-             (nix-shell-name (cdr nix-shell-cons-cell)))
-        (if nix-shell-name
-            (org-nix-shell-eval nix-shell-name)
-          (org-nix-shell--clear-env)))))
-  (funcall orig-fun arg info params executor-type))
+      (when-let* ((params (nth 2 info))
+                  (nix-shell-cons-cell (assq :nix-shell params))
+                  (nix-shell-name (cdr nix-shell-cons-cell)))
+        nix-shell-name))))
 
-(defun org-nix-shell--advice-28 (orig-fun &optional arg info params)
+
+;; Thank you! https://github.com/purcell/inheritenv/
+(defun org-nix-shell--inheritenv-apply (func &rest args)
+  "Apply FUNC such that the environment it sees will match the current value.
+This is useful if FUNC creates a temp buffer, because that will
+not inherit any buffer-local values of variables `exec-path' and
+`process-environment'.
+
+This function is designed for convenient use as an \"around\" advice.
+
+ARGS is as for ORIG."
+  (cl-letf* (((default-value 'process-environment) process-environment)
+             ((default-value 'exec-path) exec-path))
+    (apply func args)))
+
+(defun org-nix-shell--execute-src-block (orig-fun &optional arg info params &rest rest)
   "Evaluate nix shell from :nix-shell header argument before executing src block.
 Intended to be used as a advice around `org-babel-execute-src-block'.
 ORIG-FUN, ARG, INFO, PARAMS"
-  ;; Ideally we would like something like a org-babel-before-execute-hook instead of
-  ;; "advice"
-  (let* ((org-babel-current-src-block-location
-          (or org-babel-current-src-block-location
-              (nth 5 info)
-              (org-babel-where-is-src-block-head)))
-         (info (if info (copy-tree info) (org-babel-get-src-block-info))))
-    ;; Merge PARAMS with INFO before considering source block
-    ;; evaluation since both could disagree.
-    (cl-callf org-babel-merge-params (nth 2 info) params)
-    (when (org-babel-check-evaluate info)
-      (cl-callf org-babel-process-params (nth 2 info))
-      (let* ((params (nth 2 info))
-             (nix-shell-cons-cell (assq :nix-shell params))
-             (nix-shell-name (cdr nix-shell-cons-cell)))
-        (if nix-shell-name
-            (org-nix-shell-eval nix-shell-name)
-          (org-nix-shell--clear-env)))))
-  (funcall orig-fun arg info params))
+  (let* ((nix-shell-name (org-nix-shell--process-params info params)))
+    (if nix-shell-name
+        (let* ((direnv (when nix-shell-name (org-nix-shell--get-direnv nix-shell-name)))
+               (_ (when nix-shell-name (org-nix-shell--apply-env direnv)))
+               (ret (org-nix-shell--inheritenv-apply orig-fun arg info params rest))
+               (_ (when nix-shell-name (org-nix-shell--clear-env))))
+          ret)
+      (apply orig-fun arg info params rest))))
 
 ;;;###autoload
 (define-minor-mode org-nix-shell-mode
   "Toggle `org-nix-shell-mode'."
   :global t
-  (let ((babel-execute-advice (if (< emacs-major-version 29)
-                                  #'org-nix-shell--advice-28
-                                #'org-nix-shell--advice)))
-    (if org-nix-shell-mode
+  (if org-nix-shell-mode
       (progn
-        (envrc-mode +1)
-        (advice-add 'org-babel-execute-src-block :around babel-execute-advice))
-    (advice-remove 'org-babel-execute-src-block babel-execute-advice))))
+        (org-nix-shell-invalidate-cache)
+        (advice-add 'org-babel-execute-src-block :around #'org-nix-shell--execute-src-block))
+    (advice-remove 'org-babel-execute-src-block #'org-nix-shell--execute-src-block)))
 
 (provide 'org-nix-shell)
 ;;; org-nix-shell.el ends here

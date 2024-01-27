@@ -25,7 +25,6 @@
 
 ;;; Code:
 (require 'ert)
-(require 'envrc)
 (require 'org)
 (require 'ob-shell)
 (require 'org-nix-shell)
