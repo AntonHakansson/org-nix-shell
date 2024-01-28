@@ -21,4 +21,4 @@ test: compile
 
 .PHONY: bench
 bench: compile
-	hyperfine 'cask emacs --batch -L . -l bench.el -f org-nix-shell--run-bench'
+	hyperfine 'cask emacs --batch -L . -L test -l bench.el -f org-nix-shell--run-bench'
