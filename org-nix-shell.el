@@ -5,8 +5,8 @@
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
 ;; Version: 0.3.1
-;; Package-Requires: ((emacs "27.1") (org) (json))
-;; Keywords: org-mode, org-babel, nix, nix-shell
+;; Package-Requires: ((emacs "27.1") (org "9.4"))
+;; Keywords: processes, outlines
 
 ;; This file is not part of GNU Emacs.
 
@@ -134,18 +134,20 @@
   :prefix "org-nix-shell-")
 
 (defvar-local org-nix-shell--cache (make-hash-table :test 'equal :size 10)
-  "Cached nix-shell environment variables from `org-nix-shell--direnv-dump-json'.")
+  "Cached nix shell environment variables from `org-nix-shell--direnv-dump-json'.")
 
 ;;;###autoload
 (defun org-nix-shell-invalidate-cache ()
+  "Clear cached nix shell environment variables.
+This will force a nix shell reload on the next `org-babel-execute-src-block'."
   (interactive)
   (clrhash org-nix-shell--cache))
 
 (defun org-nix-shell--direnv-dump-json (nix-shell-path)
-  "Returns output as json object of the command:
-$ nix-shell <nix-shell-path> --run \"direnv dump json\".
+  "Return environment variables as json object from NIX-SHELL-PATH.
 
-NIX-SHELL-PATH is the path to a nix shell."
+Behind the scenes we run the command:
+nix-shell <nix-shell-path> --run \"direnv dump json\"."
   (with-current-buffer (get-buffer-create "*org-nix-shell*")
     (erase-buffer)
     ;; Output from $shellHook from shell.nix can clobber clean json dump
@@ -160,7 +162,10 @@ NIX-SHELL-PATH is the path to a nix shell."
         (user-error "Error running nix-shell")))))
 
 (defun org-nix-shell--get-direnv (name)
-  "Tries to find src block with name NAME and return the nix shell environment."
+  "Try to find src block with name NAME and return the nix shell environment.
+
+Note that the results may come from the cache `org-nix-shell--cache'.
+To force a full reload you may call `org-nix-shell-invalidate-cache'."
   (save-excursion
     (let ((point (org-babel-find-named-block name)))
       (if point
@@ -204,7 +209,7 @@ also appear in DIRENV."
 
 ;; Thank you! https://github.com/purcell/envrc
 (defun org-nix-shell--clear-env ()
-  "Remove shell environment set by `org-nix-shell--apply-env'"
+  "Remove shell environment set by `org-nix-shell--apply-env'."
   (kill-local-variable 'exec-path)
   (kill-local-variable 'process-environment))
 
@@ -243,16 +248,17 @@ ARGS is as for ORIG."
     (apply func args)))
 
 (defun org-nix-shell--execute-src-block (orig-fun &optional arg info params executor-type)
-  "Evaluate nix shell from :nix-shell header argument before executing src block.
+  "Execute src block with nix shell environment
 Intended to be used as a advice around `org-babel-execute-src-block'.
-ORIG-FUN, ARG, INFO, PARAMS"
+ORIG-FUN, ARG, INFO, PARAMS, EXECUTOR-TYPE are the same as for
+`org-babel-execute-src-block'"
   (let* ((nix-shell-name (org-nix-shell--process-params info params)))
     (if nix-shell-name
         (let* ((direnv (when nix-shell-name (org-nix-shell--get-direnv nix-shell-name)))
                (_ (when nix-shell-name (org-nix-shell--apply-env direnv)))
                (ret (if (>= emacs-major-version 28)
                         (org-nix-shell--inheritenv-apply orig-fun arg info params executor-type)
-                     (org-nix-shell--inheritenv-apply orig-fun arg info params)))
+                      (org-nix-shell--inheritenv-apply orig-fun arg info params)))
                (_ (when nix-shell-name (org-nix-shell--clear-env))))
           ret)
       (if (>= emacs-major-version 28)
