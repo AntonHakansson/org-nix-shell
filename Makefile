@@ -19,6 +19,10 @@ compile: cask
 test: compile
 	cask emacs --batch -L . -L test -l org-nix-shell-test.el -f ert-run-tests-batch
 
+.PHONY: lint
+lint: cask
+	cask emacs --batch -L . -l package-lint -f package-lint-batch-and-exit org-nix-shell.el
+
 .PHONY: bench
 bench: compile
 	hyperfine 'cask emacs --batch -L . -L test -l bench.el -f org-nix-shell--run-bench'

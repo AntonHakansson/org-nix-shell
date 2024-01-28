@@ -10,6 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         emacs-version:
           - 27.1
@@ -39,9 +40,11 @@ jobs:
           version: snapshot
       - run: echo "$HOME/.cask/bin" >> $GITHUB_PATH
       - name: Install direnv with Nix
-        run: nix profile install nixpkgs#direnv
-      - run: echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+        run: nix profile install nixpkgs#direnv |
+             echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
       - name: Check emacs version
         run: emacs --version
       - name: Run tests
         run: make test
+      - name: Run package-lint
+        run: make lint
