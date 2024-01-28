@@ -72,8 +72,8 @@
 ;;   This gives us a noticeable performance win.
 ;;
 ;; - Removed `org-nix-shell-get-direnv-path', `org-nix-shell-envrc-format' and
-;;   `org-nix-shell-src-block-name'. Instead we tangle nix shells to org-babel's
-;;   temporary directory.
+;;   `org-nix-shell-src-block-name'. Instead we tangle nix shells to \"/tmp/\"
+;;
 ;;
 ;; Version 0.2.0   (lots of breaking changes)
 ;; - Source blocks must explicitly set ':nix-shell <named-src-block>' header argument to
