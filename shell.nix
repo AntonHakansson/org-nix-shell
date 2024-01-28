@@ -7,5 +7,6 @@ pkgs.mkShell {
     cask
     pkgs.direnv
     emacs
+    pkgs.hyperfine
   ];
 }
