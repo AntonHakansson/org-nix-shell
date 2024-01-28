@@ -69,11 +69,11 @@
 ;; Version 0.3.0   (lots of breaking changes)
 ;; - Dropped dependency on envrc package. Instead we get the shell environment from
 ;;   nix-shell using direnv's dump command. No more out-of-tree directory with .envrc.
-;;   This gives us a noticable performance win.
+;;   This gives us a noticeable performance win.
 ;;
 ;; - Removed `org-nix-shell-get-direnv-path', `org-nix-shell-envrc-format' and
 ;;   `org-nix-shell-src-block-name'. Instead we tangle nix shells to org-babel's
-;;   temoporary directory.
+;;   temporary directory.
 ;;
 ;; Version 0.2.0   (lots of breaking changes)
 ;; - Source blocks must explicitly set ':nix-shell <named-src-block>' header argument to

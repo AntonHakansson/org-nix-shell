@@ -1,13 +1,11 @@
 #+html: <div align=center>
 #+html: <h2 align=center>org-nix-shell</h2>
-#+html: <p>Buffer-local nix-shell environment in org-mode.</p>
+#+html: <p>Buffer-local nix-shell environments in org-mode.</p>
 #+html: <img src='img/showcase-alt.png'>
 #+html: </div>
 
-This package is experimental; expect bugs and breaking changes.
-
-Use nix shells directly in org-mode and org-babel src blocks.
-=org-nix-shell= works by loading a nix shell environment using [[https://direnv.net/][direnv]].
+Use nix shells directly in org-mode source blocks. =org-nix-shell= works by seamlessly
+inheriting a nix shell environment using [[https://direnv.net/][direnv]] before executing org-babel source blocks.
 
 * Quickstart
 
@@ -28,9 +26,63 @@ Use nix shells directly in org-mode and org-babel src blocks.
 Enable =org-nix-shell-mode= and evaluate or export the buffer.
 See [[file:demo.org][demo.org]] with examples for Python and C.
 
+* Usage
+
+First create a nix shell in a named source block.
+
+#+begin_src org
+  ,#+name: <name>
+  ,#+begin_src nix
+    { pkgs ? import <nixpkgs> {} }:
+    pkgs.mkShell {
+      buildInputs = with pkgs; [ python3 ];
+    }
+  ,#+end_src
+#+end_src
+
+Source blocks with a =:nix-shell <name>= header argument will use the nix shell
+environment specified by =<name>=; where =<name>= is the corresponding named source block
+in the same buffer. Other source blocks should be unaffected and you can explicitly set
+=:nix-shell 'nil= to not depend on any nix shell.
+
+To use the nix shell above we can do:
+
+#+begin_src org
+  ,#+begin_src python :nix-shell <name>
+    print("hello from python")
+  ,#+end_src
+#+end_src
+
+There are three ways to configure the =:nix-shell= header property; also see [[https://orgmode.org/manual/Using-Header-Arguments.html][Using Header
+Arguments (The Org Manual)]]. In increasing order of priority they are:
+
+** Buffer Scope
+
+#+begin_src org
+  ,#+property: header-args: :nix-shell <name>
+#+end_src
+
+** Subtree Scope
+
+#+begin_src org
+  ,* sample header
+    :PROPERTIES:
+    :header-args:    :nix-shell <name>
+    :END:
+#+end_src
+
+** Source Block Scope
+
+#+begin_src org
+  ,#+begin_src python :nix-shell <name>
+    print("hello from python")
+  ,#+end_src
+#+end_src
+
+
 * Installation
 
-Make sure [[https://direnv.net/][direnv]] is installed on your system ([[https://github.com/nix-community/nix-direnv#installation][nix-community/nix-direnv#Installation]]).
+Make sure [[https://nixos.org/manual/nix/stable/command-ref/nix-shell][nix-shell]] and [[https://direnv.net/][direnv]] is installed on your system ([[https://github.com/nix-community/nix-direnv#installation][nix-community/nix-direnv#Installation]]).
 
 ** Manual
 
@@ -42,6 +94,7 @@ Then evaluate:
   (add-hook 'org-mode-hook 'org-nix-shell-mode)
 #+end_src
 
+** TODO Melpa
 ** Straight
 
 #+begin_src elisp
