@@ -4,7 +4,7 @@
 
 ;; Maintainer: Anton Hakansson <anton@hakanssn.com>
 ;; URL: https://github.com/AntonHakansson/
-;; Version: 0.3.1
+;; Version: 0.3.2
 ;; Package-Requires: ((emacs "27.1") (org "9.4"))
 ;; Keywords: processes, outlines
 
@@ -66,6 +66,13 @@
 ;;
 ;;
 ;;; NEWS:
+;; Version 0.3.2
+;; - Support narrowed Org buffer.
+;;
+;; - Don't assume "/tmp/" is preferred temporary directory.
+;;
+;; - Fix commentary headings and docstrings.
+;;
 ;; Version 0.3.0   (lots of breaking changes)
 ;; - Dropped dependency on envrc package. Instead we get the shell environment from
 ;;   nix-shell using direnv's dump command. No more out-of-tree directory with .envrc.
@@ -73,7 +80,6 @@
 ;;
 ;; - Removed `org-nix-shell-get-direnv-path', `org-nix-shell-envrc-format' and
 ;;   `org-nix-shell-src-block-name'. Instead we tangle nix shells to \"/tmp/\"
-;;
 ;;
 ;; Version 0.2.0   (lots of breaking changes)
 ;; - Source blocks must explicitly set ':nix-shell <named-src-block>' header argument to
@@ -245,7 +251,7 @@ ARGS is as for ORIG."
     (apply func args)))
 
 (defun org-nix-shell--execute-src-block (orig-fun &optional arg info params executor-type)
-  "Execute src block with nix shell environment
+  "Execute src block with nix shell environment.
 Intended to be used as a advice around `org-babel-execute-src-block'.
 ORIG-FUN, ARG, INFO, PARAMS, EXECUTOR-TYPE are the same as for
 `org-babel-execute-src-block'"
