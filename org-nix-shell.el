@@ -25,9 +25,9 @@
 
 ;;; Commentary:
 ;;
-;;  Use a buffer-local nix-shell environment in org-babel src blocks.
+;; Use a buffer-local nix-shell environment in org-babel src blocks.
 ;;
-;;; Basic Usage:
+;; Basic Usage:
 ;;
 ;; First create a nix shell derivation in a named src block.
 ;;
