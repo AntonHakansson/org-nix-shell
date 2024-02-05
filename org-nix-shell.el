@@ -177,9 +177,7 @@ To force a full reload you may call `org-nix-shell-invalidate-cache'."
           (if cached-direnv
               cached-direnv
             (let* ((nix-shell-basename (concat "nix-shell-" name ".nix"))
-                   (nix-shell-path (make-temp-file (concat
-                                                    (file-name-as-directory "/tmp")
-                                                    nix-shell-basename))))
+                   (nix-shell-path (make-temp-file nix-shell-basename)))
               (org-babel-tangle '(4) nix-shell-path)
               (when-let ((direnv (org-nix-shell--direnv-dump-json nix-shell-path)))
                 (puthash hash direnv org-nix-shell--cache)))))))))
