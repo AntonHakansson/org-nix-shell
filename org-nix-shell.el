@@ -168,22 +168,21 @@ Note that the results may come from the cache `org-nix-shell--cache'.
 To force a full reload you may call `org-nix-shell-invalidate-cache'."
   (save-excursion
     (let ((point (org-babel-find-named-block name)))
-      (if point
-          (progn
-            (goto-char point)
-            (let* ((info (org-babel-get-src-block-info))
-                   (hash (abs (sxhash info)))
-                   (cached-direnv (gethash hash org-nix-shell--cache)))
-              (if cached-direnv
-                  cached-direnv
-                (let* ((nix-shell-basename (concat "nix-shell-" name ".nix"))
-                       (nix-shell-path (make-temp-file (concat
-                                                        (file-name-as-directory "/tmp")
-                                                        nix-shell-basename))))
-                  (org-babel-tangle '(4) nix-shell-path)
-                  (when-let ((direnv (org-nix-shell--direnv-dump-json nix-shell-path)))
-                    (puthash hash direnv org-nix-shell--cache))))))
-        (user-error "`%s' src block not found in buffer" name)))))
+      (if (not point)
+          (user-error "`%s' src block not found in buffer" name)
+        (goto-char point)
+        (let* ((info (org-babel-get-src-block-info))
+               (hash (abs (sxhash info)))
+               (cached-direnv (gethash hash org-nix-shell--cache)))
+          (if cached-direnv
+              cached-direnv
+            (let* ((nix-shell-basename (concat "nix-shell-" name ".nix"))
+                   (nix-shell-path (make-temp-file (concat
+                                                    (file-name-as-directory "/tmp")
+                                                    nix-shell-basename))))
+              (org-babel-tangle '(4) nix-shell-path)
+              (when-let ((direnv (org-nix-shell--direnv-dump-json nix-shell-path)))
+                (puthash hash direnv org-nix-shell--cache)))))))))
 
 ;; Thank you! https://github.com/purcell/envrc
 (defun org-nix-shell--merge-environment (process-env direnv)
