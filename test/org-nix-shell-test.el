@@ -36,6 +36,7 @@
          '(emacs-lisp shell)))
 
 (defconst org-nix-shell-hello-shell-preamble "
+* Define Shell
 #+name: nix-shell
 #+begin_src nix
   { pkgs ? import <nixpkgs> {} }:
@@ -79,6 +80,18 @@ point at the beginning of the inserted text."
 <point>hello
 #+end_src")
     (org-nix-shell-mode +1)
+    (should (org-babel-execute-src-block))
+    (goto-char (should (org-babel-where-is-src-block-result)))
+    (should (equal (org-babel-read-result) '(("Hello" "world!"))))))
+
+(ert-deftest org-nix-shell-test--narrowed-basic-shell ()
+  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
+* Tree
+#+begin_src sh :nix-shell \"nix-shell\"
+<point>hello
+#+end_src")
+    (org-nix-shell-mode +1)
+    (org-narrow-to-subtree)
     (should (org-babel-execute-src-block))
     (goto-char (should (org-babel-where-is-src-block-result)))
     (should (equal (org-babel-read-result) '(("Hello" "world!"))))))
