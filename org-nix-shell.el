@@ -166,7 +166,7 @@ nix-shell <nix-shell-path> --run \"direnv dump json\"."
 
 Note that the results may come from the cache `org-nix-shell--cache'.
 To force a full reload you may call `org-nix-shell-invalidate-cache'."
-  (save-excursion
+  (org-with-wide-buffer
     (let ((point (org-babel-find-named-block name)))
       (if (not point)
           (user-error "`%s' src block not found in buffer" name)
