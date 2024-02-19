@@ -87,16 +87,18 @@ Make sure [[https://nixos.org/manual/nix/stable/command-ref/nix-shell][nix-shell
 ** Manual
 
 First, put [[file:org-nix-shell.el][org-nix-shell.el]] in your load path.
-Then evaluate:
 
 #+begin_src emacs-lisp
   (require 'org-nix-shell)
   (add-hook 'org-mode-hook 'org-nix-shell-mode)
 #+end_src
 
-** TODO Melpa
+** Melpa
 
-See [[https://github.com/melpa/melpa/pull/8903][Pull Request #8903]].
+#+begin_src emacs-lisp
+  (use-package org-nix-shell
+    :hook (org-mode . org-nix-shell-mode))
+#+end_src
 
 ** Straight
 
@@ -107,27 +109,6 @@ See [[https://github.com/melpa/melpa/pull/8903][Pull Request #8903]].
                 :host github
                 :repo "AntonHakansson/org-nix-shell")
     :hook (org-mode . org-nix-shell-mode))
-#+end_src
-
-** Nix
-
-With ~emacsWithPackagesFromUsePackage~ you can do:
-#+begin_src nix
-  pkgs.emacsWithPackagesFromUsePackage {
-    config = ./init.el;
-    extraEmacsPackages = epkgs:
-      [(epkgs.trivialBuild rec {
-        pname = "org-nix-shell";
-        version = "v0.3.2";
-        packageRequires = [ epkgs.envrc ];
-        src = pkgs.fetchFromGitHub {
-          owner = "AntonHakansson";
-          repo = pname;
-          rev = version;
-          sha256 = lib.fakeHash;
-        };
-      })];
-  };
 #+end_src
 
 * Customization
