@@ -10,7 +10,7 @@ inheriting a nix shell environment using [[https://direnv.net/][direnv]] before 
 * Quickstart
 
 #+begin_src org
-  ,#+name: nix-shell
+  ,#+name: my-shell
   ,#+begin_src nix
     { pkgs ? import <nixpkgs> {} }:
     pkgs.mkShell {
@@ -18,8 +18,8 @@ inheriting a nix shell environment using [[https://direnv.net/][direnv]] before 
     }
   ,#+end_src
 
-  ,#+begin_src sh :nix-shell "nix-shell"  # load named nix-shell src block
-    hello   # use 'hello' dependency
+  ,#+begin_src sh :nix-shell "my-shell"
+    hello   # use 'hello' from 'my-shell'
   ,#+end_src
 #+end_src
 
