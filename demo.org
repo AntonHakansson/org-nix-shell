@@ -80,6 +80,8 @@ Load =org-nix-shell-mode= and then execute the src blocks.
 :header-args+: :nix-shell "nix-shell-fortune"
 :END:
 
+Here we set the nix-shell in the subtree property to default to =nix-shell-fortune=.
+
 #+name: nix-shell-fortune
 #+begin_src nix
   { pkgs ? import <nixpkgs> {} }:
@@ -94,7 +96,8 @@ Load =org-nix-shell-mode= and then execute the src blocks.
   fortune
 #+end_src
 
-We can alwyas override the nix-shell per source block.
+We can always override the nix-shell per source block.
+
 #+headers: :nix-shell "nix-shell"
 #+begin_src sh :results output
   cowsay "hello from top-level nix-shell"
