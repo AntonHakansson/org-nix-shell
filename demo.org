@@ -1,6 +1,6 @@
 #+title: Demo of =org-nix-shell=
 #+property: header-args :exports both
-#+property: header-args+ :nix-shell "nix-shell"
+#+property: header-args+ :nix-shell nix-shell
 
 Load =org-nix-shell-mode= and then execute the src blocks.
 
@@ -77,7 +77,7 @@ Load =org-nix-shell-mode= and then execute the src blocks.
 
 * Separate nix-shell
 :PROPERTIES:
-:header-args+: :nix-shell "nix-shell-fortune"
+:header-args+: :nix-shell nix-shell-fortune
 :END:
 
 Here we set the nix-shell in the subtree property to default to =nix-shell-fortune=.
@@ -98,8 +98,17 @@ Here we set the nix-shell in the subtree property to default to =nix-shell-fortu
 
 We can always override the nix-shell per source block.
 
-#+headers: :nix-shell "nix-shell"
+#+headers: :nix-shell nix-shell
 #+begin_src sh :results output
   cowsay "hello from top-level nix-shell"
 #+end_src
 
+Or remove it completely
+
+#+headers: :nix-shell 'nil
+#+begin_src sh :results output
+  command -v hello && echo "hello installed" || echo "hello not installed"
+#+end_src
+
+#+results:
+: hello not installed

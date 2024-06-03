@@ -76,7 +76,7 @@ point at the beginning of the inserted text."
 
 (ert-deftest org-nix-shell-test--basic-shell ()
   (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
-#+begin_src sh :nix-shell \"nix-shell\"
+#+begin_src sh :nix-shell nix-shell
 <point>hello
 #+end_src")
     (org-nix-shell-mode +1)
@@ -87,7 +87,7 @@ point at the beginning of the inserted text."
 (ert-deftest org-nix-shell-test--narrowed-basic-shell ()
   (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
 * Tree
-#+begin_src sh :nix-shell \"nix-shell\"
+#+begin_src sh :nix-shell nix-shell
 <point>hello
 #+end_src")
     (org-nix-shell-mode +1)
@@ -104,7 +104,7 @@ point at the beginning of the inserted text."
   pkgs.mkShbuildInputs = [ pkgs.hello ]; }
 #+end_src
 
-#+begin_src sh :nix-shell \"nix-shell\"
+#+begin_src sh :nix-shell nix-shell
   <point>hello
 #+end_src"
     (org-nix-shell-mode +1)
@@ -112,7 +112,7 @@ point at the beginning of the inserted text."
 
 (ert-deftest org-nix-shell-test--missing-shell ()
   (org-test-with-temp-text "
-#+begin_src sh :nix-shell \"nix-shell\"
+#+begin_src sh :nix-shell nix-shell
   <point>hello
 #+end_src"
     (org-nix-shell-mode +1)
@@ -122,6 +122,27 @@ point at the beginning of the inserted text."
   (with-current-buffer (find-file "../demo.org")
     (org-nix-shell-mode +1)
     (should (org-export-as 'html))))
+
+(ert-deftest org-nix-shell-test--trailing-comment ()
+  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
+#+begin_src sh :nix-shell nix-shell # this is a trailing comment
+<point>hello
+#+end_src")
+    (org-nix-shell-mode +1)
+    (should (org-babel-execute-src-block))
+    (goto-char (should (org-babel-where-is-src-block-result)))
+    (should (equal (org-babel-read-result) '(("Hello" "world!"))))))
+
+(ert-deftest org-nix-shell-test--nil-shell ()
+  (org-test-with-temp-text (concat org-nix-shell-hello-shell-preamble "
+#+begin_src sh :nix-shell nil  # unset nix-shell
+<point>[[ -z $IN_NIX_SHELL ]] && echo yes || echo no
+#+end_src")
+    (org-nix-shell-mode +1)
+    (should (org-babel-execute-src-block))
+    (goto-char (should (org-babel-where-is-src-block-result)))
+    (should (equal (org-babel-read-result) "yes"))))
+
 
 (provide 'org-nix-shell-test.el)
 ;;; org-nix-shell-test.el ends here

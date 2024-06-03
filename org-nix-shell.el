@@ -231,10 +231,11 @@ INFO and PARAMS are arguments originally from `org-babel-execute-src-block'"
     (when (org-babel-check-evaluate info)
       (cl-callf org-babel-process-params (nth 2 info))
       (when-let* ((params (nth 2 info))
-                  (nix-shell-cons-cell (assq :nix-shell params))
-                  (nix-shell-name (cdr nix-shell-cons-cell)))
-        nix-shell-name))))
-
+                  (nix-shell-params (cdr (assq :nix-shell params)))
+                  (nix-shell-name (car (split-string nix-shell-params nil))))
+        (cond
+         ((string-equal nix-shell-name "nil") nil)
+         (t nix-shell-name))))))
 
 ;; Thank you! https://github.com/purcell/inheritenv/
 (defun org-nix-shell--inheritenv-apply (func &rest args)
